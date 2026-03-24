@@ -3,8 +3,7 @@ flask-cors
 pandas
 scikit-learn
 xgboost
-tensorflow
+tensorflow-cpu
 statsmodels
 waitress
 numpy
- 
