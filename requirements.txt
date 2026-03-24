@@ -3,6 +3,5 @@ flask-cors
 pandas
 scikit-learn
 xgboost
-tensorflow
 statsmodels
 waitress
