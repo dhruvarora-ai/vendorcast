@@ -74,7 +74,7 @@ def predict():
 
     try:
         # ✅ Save file (no RAM overload)
-        file_path = "temp.csv"
+        file_path = "/tmp/temp.csv"
         file.save(file_path)
 
         # Run ML pipeline

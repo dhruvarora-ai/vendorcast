@@ -50,9 +50,9 @@ def prepare_data(file, date_col, vendor_col, sales_col,
 
     create_monthly(df, date_col, vendor_col, sales_col,
                    brand_col, product_col)
-
-    monthly = load_from_db()
-
+    monthly = create_monthly(df, date_col, vendor_col, sales_col,
+                        brand_col, product_col)
+    
     group_cols = [vendor_col]
     if brand_col:
         group_cols.append(brand_col)
