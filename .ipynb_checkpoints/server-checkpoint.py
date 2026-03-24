@@ -1,4 +1,5 @@
 print("Starting server...")
+
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 import pandas as pd
@@ -6,22 +7,21 @@ import os
 import sys
 import traceback
 
-# Add your project folder to path
+# Add project folder to path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-
-
-app = Flask(__name__, static_folder="frontend", static_url_path="")
+# ✅ FIXED: removed static_url_path=""
+app = Flask(__name__, static_folder="frontend")
 CORS(app)
 
 # ✅ 2GB upload limit
 app.config['MAX_CONTENT_LENGTH'] = 2 * 1024 * 1024 * 1024
 
 
-# ── Serve frontend ─────────────────────────────────────────
-@app.route("/")
-def index():
-    return send_from_directory("frontend", "index.html")
+# ── API HEALTH CHECK (optional but useful) ─────────────────
+@app.route("/api/health")
+def health():
+    return jsonify({"status": "ok"})
 
 
 # ── Column detection endpoint ──────────────────────────────
@@ -33,10 +33,8 @@ def get_columns():
     file = request.files["file"]
 
     try:
-        # ✅ Reset file pointer
         file.seek(0)
 
-        # ✅ Handle encoding issues
         try:
             df = pd.read_csv(file, nrows=5, encoding='utf-8')
         except:
@@ -51,14 +49,17 @@ def get_columns():
     except Exception as e:
         print("COLUMN ERROR:", str(e))
         traceback.print_exc()
-        return jsonify({"error": str(e)}), 400
+        return jsonify({
+            "error": str(e),
+            "type": type(e)._name_
+        }), 400
 
 
 # ── Main prediction endpoint ───────────────────────────────
 @app.route("/api/predict", methods=["POST"])
 def predict():
     from main import run_pipeline
-    
+
     if "file" not in request.files:
         return jsonify({"error": "No file uploaded"}), 400
 
@@ -69,11 +70,16 @@ def predict():
     brand_col   = request.form.get("brand_col") or None
     product_col = request.form.get("product_col") or None
 
+    print("📥 Received columns:",
+          date_col, vendor_col, sales_col, brand_col, product_col)
+
     if not all([date_col, vendor_col, sales_col]):
-        return jsonify({"error": "date_col, vendor_col and sales_col are required"}), 400
+        return jsonify({
+            "error": "date_col, vendor_col and sales_col are required"
+        }), 400
 
     try:
-        # ✅ Save file (no RAM overload)
+        # ✅ FIX: use /tmp for Render
         file_path = "/tmp/temp.csv"
         file.save(file_path)
 
@@ -87,7 +93,6 @@ def predict():
             product_col
         )
 
-        # Model accuracy table
         model_results = [
             {"model": k, "accuracy": round(v["accuracy"], 2)}
             for k, v in results.items()
@@ -110,7 +115,11 @@ def predict():
     except Exception as e:
         print("PREDICTION ERROR:", str(e))
         traceback.print_exc()
-        return jsonify({"error": str(e)}), 500
+
+        return jsonify({
+            "error": str(e),
+            "type": type(e)._name_
+        }), 500
 
 
 # ── SQLite history endpoint ────────────────────────────────
@@ -128,12 +137,21 @@ def history():
     except Exception as e:
         print("DB ERROR:", str(e))
         traceback.print_exc()
-        return jsonify({"error": str(e)}), 500
+
+        return jsonify({
+            "error": str(e),
+            "type": type(e)._name_
+        }), 500
+
+
+# ── Serve frontend LAST (important) ────────────────────────
+@app.route("/")
+def index():
+    return send_from_directory("frontend", "index.html")
 
 
 # ── Run server ─────────────────────────────────────────────
 if __name__ == "__main__":
-    import os
     from waitress import serve
     port = int(os.environ.get("PORT", 8000))
     print(f"Starting server on port {port}...")
