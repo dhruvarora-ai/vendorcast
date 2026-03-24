@@ -1,0 +1,11 @@
+# Ignore large files
+*.csv
+*.db
+*.sqlite
+
+# Python cache
+_pycache_/
+*.pyc
+
+# Temp files
+temp.csv

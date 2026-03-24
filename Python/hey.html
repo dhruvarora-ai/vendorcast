@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JavaScript Object Creation Example</title>
+</head>
+<body style="font-family: Arial; padding: 20px;">
+<h2>JavaScript Object Creation with Methods</h2>
+<p id="output"></p>
+<script>
+let student = { 
+    name: "Dhruv Arora",
+    course: "B.Tech CSE (AI/ML)", 
+    marks: [85, 90, 88],
+    calculateAverage: function() { 
+        let total = 0;
+        for (let i = 0; i < this.marks.length; i++) { 
+            total += this.marks[i];
+        }
+        return total / this.marks.length;
+    }, 
+    displayDetails: function() { 
+        return `
+        Name: ${this.name} <br> 
+        Course: ${this.course} <br>
+        Average Marks: ${this.calculateAverage().toFixed(2)}
+        `;
+    }
+};
+document.getElementById("output").innerHTML = student.displayDetails();
+</script>
+</body>
+</html>
+
+

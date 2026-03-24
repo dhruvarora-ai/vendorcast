@@ -1,0 +1,25 @@
+<table width="100%" border="1" cellspacing="5%"> 
+        <tr>
+            <th>NAME</th>
+            <th>AGE</th>
+            <th>ADHAR NO</th>
+        </tr>
+        <tr>
+            <td>SANDEEP ARORA</td>
+            <td>GEETA ARORA</td>
+            <td>PRACHI ARORA</td>
+            <td>DHRUV ARORA</td>
+        </tr>
+        <tr>AGE
+            <td>55</td>
+            <td>50</td>
+            <td>23</td>
+            <td>19</td>
+        </tr>
+        <tr>
+            <td>261462344236</td>
+            <td>582550686588</td>
+            <td>790741839933</td>
+            <td>577020519614</td>
+        </tr>
+    </table>

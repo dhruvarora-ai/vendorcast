@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>VendorCast — AI Sales Forecasting</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+/* ═══════════ TOKENS */
+:root{
+  --ink:#08090b;--ink2:#0f1115;--ink3:#161a20;--ink4:#1e242c;
+  --rim:#252d38;--rim2:#2e3844;
+  --lime:#c8ff00;--lime2:#a8d900;
+  --text:#dde4ec;--text2:#8a9aaa;--text3:#4a5a6a;
+  --red:#ff3d5a;--amber:#ffaa00;
+  --r:10px;--r2:6px;
+  --mono:'JetBrains Mono',monospace;
+  --body:'Outfit',sans-serif;
+  --head:'Bebas Neue',sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--ink);color:var(--text);font-family:var(--body);min-height:100vh;overflow-x:hidden}
+::selection{background:var(--lime);color:var(--ink)}
+::-webkit-scrollbar{width:6px}::-webkit-scrollbar-track{background:var(--ink2)}::-webkit-scrollbar-thumb{background:var(--rim2);border-radius:3px}
+
+/* ═══════════ NAV */
+nav{position:fixed;top:0;left:0;right:0;z-index:100;height:56px;display:flex;align-items:center;gap:1.5rem;padding:0 2rem;background:rgba(8,9,11,.9);backdrop-filter:blur(20px);border-bottom:1px solid var(--rim)}
+.n-logo{display:flex;align-items:center;gap:.6rem;margin-right:auto;text-decoration:none}
+.n-mark{width:30px;height:30px;border-radius:7px;background:var(--lime);display:flex;align-items:center;justify-content:center;font-family:var(--head);font-size:17px;color:var(--ink);line-height:1}
+.n-name{font-family:var(--head);font-size:22px;letter-spacing:1px;color:var(--text)}
+.n-tabs{display:flex;gap:.25rem}
+.n-tab{padding:.35rem .85rem;border-radius:var(--r2);font-size:13px;font-weight:600;color:var(--text2);cursor:pointer;border:none;background:none;transition:all .16s}
+.n-tab:hover{color:var(--text);background:var(--ink3)}
+.n-tab.on{color:var(--lime);background:rgba(200,255,0,.08)}
+.n-pill{font-family:var(--mono);font-size:11px;color:var(--text3);display:flex;align-items:center;gap:.4rem}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--lime);box-shadow:0 0 8px var(--lime);animation:blink 2s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* ═══════════ HERO */
+.hero{position:relative;overflow:hidden;padding:120px 2rem 70px;border-bottom:1px solid var(--rim)}
+.hero-grid{position:absolute;inset:0;background-image:linear-gradient(var(--rim) 1px,transparent 1px),linear-gradient(90deg,var(--rim) 1px,transparent 1px);background-size:48px 48px;opacity:.3;mask-image:radial-gradient(ellipse 70% 80% at 50% 0,black,transparent);pointer-events:none}
+.hero-glow{position:absolute;width:600px;height:300px;background:radial-gradient(ellipse,rgba(200,255,0,.1),transparent 70%);top:-60px;left:50%;transform:translateX(-50%);pointer-events:none}
+.hero-inner{position:relative;z-index:1;max-width:860px;margin:0 auto;text-align:center}
+.h-badge{display:inline-flex;align-items:center;gap:.5rem;padding:.3rem .85rem;border-radius:20px;margin-bottom:1.5rem;border:1px solid rgba(200,255,0,.25);background:rgba(200,255,0,.06);font-size:11px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--lime);animation:up .5s ease both}
+.h-badge::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--lime);box-shadow:0 0 6px var(--lime)}
+.h-title{font-family:var(--head);font-size:clamp(3.5rem,9vw,7rem);line-height:.95;letter-spacing:2px;margin-bottom:1.25rem;animation:up .5s .08s ease both}
+.h-title em{font-style:normal;color:var(--lime)}
+.h-sub{font-size:16px;color:var(--text2);line-height:1.75;max-width:520px;margin:0 auto;animation:up .5s .16s ease both}
+@keyframes up{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+
+/* ═══════════ PAGES */
+.page{display:none;padding:52px 2rem 80px}.page.on{display:block}
+.wrap{max-width:860px;margin:0 auto}
+.s-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:2rem}
+.s-title{font-family:var(--head);font-size:2.2rem;letter-spacing:1px}
+.s-sub{font-size:13px;color:var(--text3);font-family:var(--mono);margin-top:.2rem}
+
+/* ═══════════ CARD */
+.card{background:var(--ink2);border:1px solid var(--rim);border-radius:var(--r)}
+
+/* DROP ZONE */
+.drop-zone{display:flex;flex-direction:column;align-items:center;gap:1.1rem;padding:3.5rem 2rem;cursor:pointer;border-radius:var(--r) var(--r) 0 0;transition:background .2s;position:relative;overflow:hidden}
+.drop-zone::before{content:'';position:absolute;inset:0;background:repeating-linear-gradient(-45deg,transparent,transparent 8px,rgba(200,255,0,.015) 8px,rgba(200,255,0,.015) 16px);opacity:0;transition:opacity .3s}
+.drop-zone:hover::before,.drop-zone.over::before{opacity:1}
+.drop-zone:hover,.drop-zone.over{background:rgba(200,255,0,.03)}
+.drop-ring{width:80px;height:80px;border-radius:50%;border:2px solid var(--rim2);display:flex;align-items:center;justify-content:center;color:var(--lime);transition:transform .25s,border-color .25s}
+.drop-zone:hover .drop-ring{transform:scale(1.08);border-color:var(--lime)}
+.drop-ring svg{width:36px;height:36px}
+.drop-h{font-size:17px;font-weight:600;text-align:center}
+.drop-s{font-size:12px;color:var(--text3);font-family:var(--mono);text-align:center;margin-top:.3rem}
+.btn-browse{padding:.5rem 1.3rem;border-radius:var(--r2);background:var(--ink3);border:1px solid var(--rim2);color:var(--text2);font-family:var(--body);font-size:13px;font-weight:600;cursor:pointer;transition:all .18s}
+.btn-browse:hover{border-color:var(--lime);color:var(--lime)}
+
+/* FILE BAR */
+.f-bar{display:none;align-items:center;gap:1rem;padding:.9rem 1.25rem;border-top:1px solid var(--rim);background:rgba(200,255,0,.04)}
+.f-badge{padding:.25rem .55rem;border-radius:var(--r2);background:rgba(200,255,0,.12);border:1px solid rgba(200,255,0,.25);color:var(--lime);font-family:var(--mono);font-size:11px;font-weight:500}
+.f-name{font-weight:600;font-size:14px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.f-sz{font-family:var(--mono);font-size:11px;color:var(--text3);white-space:nowrap}
+.btn-x{background:none;border:none;color:var(--text3);cursor:pointer;font-size:18px;line-height:1;transition:color .15s}
+.btn-x:hover{color:var(--red)}
+
+/* COL SELECTORS */
+.col-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:1rem;padding:1.25rem;border-top:1px solid var(--rim)}
+.col-group{display:flex;flex-direction:column;gap:.4rem}
+.col-label{font-size:11px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--text3)}
+.col-req{color:var(--lime)}
+.sel{padding:.5rem .75rem;border-radius:var(--r2);background:var(--ink3);border:1px solid var(--rim2);color:var(--text);font-family:var(--body);font-size:13px;outline:none;transition:border-color .18s;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%234a5a6a' d='M6 8L1 3h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right .6rem center;padding-right:2rem}
+.sel:focus{border-color:var(--lime)}
+
+/* ACTION ROW */
+.act-row{display:flex;align-items:center;justify-content:space-between;padding:1rem 1.25rem;border-top:1px solid var(--rim);gap:1rem}
+.hint{font-size:12px;color:var(--text3);display:flex;align-items:center;gap:.4rem}
+.btn-run{display:flex;align-items:center;gap:.6rem;padding:.65rem 1.75rem;border-radius:var(--r2);background:var(--lime);border:none;color:var(--ink);font-family:var(--body);font-size:14px;font-weight:700;cursor:pointer;transition:all .2s}
+.btn-run:hover{background:var(--lime2);transform:translateY(-1px);box-shadow:0 8px 24px rgba(200,255,0,.3)}
+.btn-run:disabled{opacity:.45;cursor:not-allowed;transform:none;box-shadow:none}
+.btn-run svg{width:16px;height:16px}
+
+/* ═══════════ RESULTS */
+.results{display:none;margin-top:2rem}
+.best-banner{display:flex;align-items:center;gap:1.25rem;padding:1.25rem 1.5rem;border-radius:var(--r);background:linear-gradient(135deg,rgba(200,255,0,.08),rgba(200,255,0,.03));border:1px solid rgba(200,255,0,.25);margin-bottom:1.5rem}
+.best-crown{font-size:2rem}
+.best-info{flex:1}
+.best-label{font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--lime);margin-bottom:.2rem}
+.best-name{font-family:var(--head);font-size:2rem;letter-spacing:1px;line-height:1}
+.best-badge{padding:.4rem 1rem;border-radius:var(--r2);background:var(--lime);color:var(--ink);font-family:var(--mono);font-size:13px;font-weight:500;white-space:nowrap}
+
+.model-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:.75rem;margin-bottom:1.5rem}
+.model-card{padding:1rem;border-radius:var(--r);background:var(--ink2);border:1px solid var(--rim);transition:border-color .18s}
+.model-card:hover{border-color:var(--rim2)}
+.model-card.top{border-color:rgba(200,255,0,.35);background:rgba(200,255,0,.04)}
+.mc-name{font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:.6rem}
+.mc-bar-track{height:5px;border-radius:3px;background:var(--ink4);overflow:hidden;margin-bottom:.5rem}
+.mc-bar{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--lime2),var(--lime));width:0;transition:width .8s ease}
+.mc-val{font-family:var(--mono);font-size:13px;color:var(--lime);font-weight:500}
+
+.tbl-wrap{border-radius:var(--r);overflow:hidden;border:1px solid var(--rim);background:var(--ink2)}
+.tbl-head{display:flex;align-items:center;justify-content:space-between;padding:.9rem 1.25rem;border-bottom:1px solid var(--rim);background:var(--ink3)}
+.tbl-title{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--text2)}
+.btn-dl{display:flex;align-items:center;gap:.4rem;padding:.4rem .9rem;border-radius:var(--r2);background:var(--ink4);border:1px solid var(--rim2);color:var(--text2);font-size:12px;font-weight:600;cursor:pointer;transition:all .18s;font-family:var(--body)}
+.btn-dl:hover{border-color:var(--lime);color:var(--lime)}
+table{width:100%;border-collapse:collapse}
+th{padding:.75rem 1rem;text-align:left;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--text3);border-bottom:1px solid var(--rim);background:var(--ink3)}
+td{padding:.7rem 1rem;font-family:var(--mono);font-size:13px;color:var(--text2);border-bottom:1px solid var(--rim);transition:background .12s}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(200,255,0,.025)}
+.td-sales{color:var(--lime);font-weight:500}
+
+/* ═══════════ HISTORY */
+.hist-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:1.5rem}
+.h-card{padding:1.1rem 1.25rem;border-radius:var(--r);background:var(--ink2);border:1px solid var(--rim);text-align:center}
+.h-val{font-family:var(--head);font-size:2.5rem;color:var(--lime);letter-spacing:1px;line-height:1}
+.h-lbl{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;margin-top:.3rem}
+.hist-table-wrap{border-radius:var(--r);overflow:hidden;border:1px solid var(--rim)}
+
+/* ═══════════ TOAST */
+.toast{position:fixed;bottom:2rem;right:2rem;z-index:999;padding:.8rem 1.25rem;border-radius:var(--r);background:var(--ink2);border:1px solid var(--rim2);font-size:13px;font-weight:600;box-shadow:0 20px 60px rgba(0,0,0,.5);transform:translateY(80px);opacity:0;transition:all .3s cubic-bezier(.34,1.56,.64,1);display:flex;align-items:center;gap:.6rem}
+.toast.show{transform:translateY(0);opacity:1}
+.toast.ok{border-color:rgba(200,255,0,.4);color:var(--lime)}
+.toast.err{border-color:rgba(255,61,90,.4);color:var(--red)}
+
+/* ═══════════ OVERLAY */
+.overlay{display:none;position:fixed;inset:0;z-index:200;background:rgba(8,9,11,.87);backdrop-filter:blur(8px);align-items:center;justify-content:center;flex-direction:column;gap:1.5rem}
+.overlay.on{display:flex}
+.ov-ring{width:64px;height:64px;border-radius:50%;border:3px solid var(--rim2);border-top-color:var(--lime);animation:rot .8s linear infinite}
+@keyframes rot{to{transform:rotate(360deg)}}
+.ov-text{font-family:var(--head);font-size:1.8rem;letter-spacing:1px;color:var(--lime)}
+.ov-sub{font-family:var(--mono);font-size:12px;color:var(--text3)}
+
+.empty{padding:3rem;text-align:center;font-family:var(--mono);font-size:13px;color:var(--text3)}
+
+/* ═══════════ RESPONSIVE */
+@media(max-width:640px){
+  .h-title{font-size:3rem}.page{padding:40px 1rem 60px}
+  .col-grid{grid-template-columns:1fr 1fr}.act-row{flex-direction:column;align-items:stretch}
+  .btn-run{justify-content:center}.hist-summary{grid-template-columns:1fr}
+  .model-grid{grid-template-columns:repeat(2,1fr)}.n-pill{display:none}
+  .best-banner{flex-wrap:wrap}
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a class="n-logo" href="#">
+    <div class="n-mark">V</div>
+    <span class="n-name">VENDORCAST</span>
+  </a>
+  <div class="n-tabs">
+    <button class="n-tab on" data-page="upload">Forecast</button>
+    <button class="n-tab" data-page="history">DB History</button>
+  </div>
+  <div class="n-pill"><span class="dot"></span>Flask API</div>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-grid"></div>
+  <div class="hero-glow"></div>
+  <div class="hero-inner">
+    <div class="h-badge">8 ML Models · Auto-Selects Best</div>
+    <h1 class="h-title">VENDOR SALES<br/><em>INTELLIGENCE</em></h1>
+    <p class="h-sub">Upload your sales CSV, map your columns, and get next-month vendor predictions — powered by Linear, Lasso, RF, GB, XGB, SVM, KNN &amp; LSTM.</p>
+  </div>
+</div>
+
+<!-- ══════════════════ PAGE: FORECAST -->
+<div class="page on" id="page-upload">
+<div class="wrap">
+  <div class="card">
+
+    <!-- Drop Zone -->
+    <div class="drop-zone" id="dropZone">
+      <div class="drop-ring">
+        <svg viewBox="0 0 48 48" fill="none"><path d="M24 32V16M24 16L16 24M24 16L32 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M8 36h32" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>
+      </div>
+      <div class="drop-h">Drop your CSV file here</div>
+      <div class="drop-s">Supports large files · drag &amp; drop or browse</div>
+      <input type="file" id="fileInput" accept=".csv" hidden/>
+      <button class="btn-browse" onclick="document.getElementById('fileInput').click()">Browse File</button>
+    </div>
+
+    <!-- File Bar -->
+    <div class="f-bar" id="fBar">
+      <span class="f-badge">CSV</span>
+      <span class="f-name" id="fName"></span>
+      <span class="f-sz" id="fSz"></span>
+      <button class="btn-x" id="clearBtn">✕</button>
+    </div>
+
+    <!-- Column Selectors -->
+    <div class="col-grid" id="colGrid" style="display:none">
+      <div class="col-group">
+        <label class="col-label col-req">Date Column *</label>
+        <select class="sel" id="selDate"><option value="">Select…</option></select>
+      </div>
+      <div class="col-group">
+        <label class="col-label col-req">Vendor Column *</label>
+        <select class="sel" id="selVendor"><option value="">Select…</option></select>
+      </div>
+      <div class="col-group">
+        <label class="col-label col-req">Sales Column *</label>
+        <select class="sel" id="selSales"><option value="">Select…</option></select>
+      </div>
+      <div class="col-group">
+        <label class="col-label">Brand Column</label>
+        <select class="sel" id="selBrand"><option value="">None</option></select>
+      </div>
+      <div class="col-group">
+        <label class="col-label">Product Column</label>
+        <select class="sel" id="selProduct"><option value="">None</option></select>
+      </div>
+    </div>
+
+    <!-- Action Row -->
+    <div class="act-row" id="actRow" style="display:none">
+      <span class="hint">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6" stroke="#4a5a6a" stroke-width="1.4"/><path d="M7 6v4M7 4.5v.5" stroke="#4a5a6a" stroke-width="1.4" stroke-linecap="round"/></svg>
+        Runs all 8 models · auto-saves monthly table to SQLite
+      </span>
+      <button class="btn-run" id="runBtn" onclick="runPrediction()">
+        <span id="runTxt">Run Forecasting</span>
+        <svg viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- RESULTS -->
+  <div class="results" id="results">
+    <div class="best-banner">
+      <div class="best-crown">🏆</div>
+      <div class="best-info">
+        <div class="best-label">Best Performing Model</div>
+        <div class="best-name" id="bestName">—</div>
+      </div>
+      <div class="best-badge" id="bestAcc">—</div>
+    </div>
+
+    <div class="model-grid" id="modelGrid"></div>
+
+    <div class="tbl-wrap">
+      <div class="tbl-head">
+        <span class="tbl-title">Next Month Predictions</span>
+        <button class="btn-dl" onclick="downloadCSV()">
+          <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M6.5 2v7M3 7l3.5 3.5L10 7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M1 11h11" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+          Download CSV
+        </button>
+      </div>
+      <div style="overflow-x:auto">
+        <table><thead id="predHead"></thead><tbody id="predBody"></tbody></table>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ══════════════════ PAGE: HISTORY -->
+<div class="page" id="page-history">
+<div class="wrap">
+  <div class="s-head">
+    <div>
+      <div class="s-title">DB HISTORY</div>
+      <div class="s-sub">Monthly aggregated data stored in sales.db (SQLite)</div>
+    </div>
+    <button class="btn-browse" onclick="loadHistory()">↻ Refresh</button>
+  </div>
+  <div class="hist-summary">
+    <div class="h-card"><div class="h-val" id="hRows">—</div><div class="h-lbl">Total Rows</div></div>
+    <div class="h-card"><div class="h-val" id="hVendors">—</div><div class="h-lbl">Vendors</div></div>
+    <div class="h-card"><div class="h-val" id="hMonths">—</div><div class="h-lbl">Months Tracked</div></div>
+  </div>
+  <div class="hist-table-wrap">
+    <div style="overflow-x:auto">
+      <table><thead id="histHead"></thead><tbody id="histBody"><tr><td class="empty" colspan="99">Click Refresh to load data from SQLite.</td></tr></tbody></table>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- LOADING OVERLAY -->
+<div class="overlay" id="overlay">
+  <div class="ov-ring"></div>
+  <div class="ov-text">FORECASTING</div>
+  <div class="ov-sub" id="ovSub">Running 8 models — please wait…</div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+const API = '';
+let selectedFile = null;
+let lastPredictions = null;
+let lastCols = [];
+
+/* ── NAV ── */
+document.querySelectorAll('.n-tab').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.n-tab').forEach(b => b.classList.remove('on'));
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('on'));
+    btn.classList.add('on');
+    document.getElementById('page-' + btn.dataset.page).classList.add('on');
+    if (btn.dataset.page === 'history') loadHistory();
+  });
+});
+
+/* ── FILE ── */
+const dropZone = document.getElementById('dropZone');
+const fileInput = document.getElementById('fileInput');
+
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('over'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('over'));
+dropZone.addEventListener('drop', e => { e.preventDefault(); dropZone.classList.remove('over'); handleFile(e.dataTransfer.files[0]); });
+fileInput.addEventListener('change', e => handleFile(e.target.files[0]));
+document.getElementById('clearBtn').addEventListener('click', clearFile);
+
+async function handleFile(file) {
+  if (!file) return;
+  if (!file.name.toLowerCase().endsWith('.csv')) { toast('Please upload a .csv file', 'err'); return; }
+  selectedFile = file;
+  document.getElementById('fName').textContent = file.name;
+  document.getElementById('fSz').textContent = fmtBytes(file.size);
+  document.getElementById('fBar').style.display = 'flex';
+  document.getElementById('results').style.display = 'none';
+
+  // Send just first 5 rows to get column names
+  const fd = new FormData();
+  fd.append('file', file);
+  try {
+    const res = await fetch(`${API}/columns`, { method: 'POST', body: fd });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    populateSelects(data.columns);
+    document.getElementById('colGrid').style.display = 'grid';
+    document.getElementById('actRow').style.display = 'flex';
+  } catch(e) {
+    toast('Could not read columns: ' + e.message, 'err');
+  }
+}
+
+function clearFile() {
+  selectedFile = null; fileInput.value = '';
+  ['fBar','colGrid','actRow'].forEach(id => document.getElementById(id).style.display = 'none');
+  document.getElementById('colGrid').style.display = 'none';
+  document.getElementById('actRow').style.display = 'none';
+  document.getElementById('results').style.display = 'none';
+}
+
+function populateSelects(cols) {
+  const guesses = {
+    selDate:    ['date','order_date','invoice_date','month','time'],
+    selVendor:  ['vendor','vendor_id','supplier','supplier_id'],
+    selSales:   ['sales','revenue','amount','qty','quantity','total'],
+    selBrand:   ['brand','brand_id','brand_name'],
+    selProduct: ['product','product_id','product_name','item'],
+  };
+  ['selDate','selVendor','selSales','selBrand','selProduct'].forEach(id => {
+    const sel = document.getElementById(id);
+    const optional = id === 'selBrand' || id === 'selProduct';
+    sel.innerHTML = (optional ? '<option value="">None</option>' : '<option value="">Select…</option>') +
+      cols.map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('');
+    // Auto-guess
+    const match = cols.find(c => (guesses[id]||[]).some(k => c.toLowerCase().includes(k)));
+    if (match) sel.value = match;
+  });
+}
+
+/* ── PREDICT ── */
+async function runPrediction() {
+  const date_col   = document.getElementById('selDate').value;
+  const vendor_col = document.getElementById('selVendor').value;
+  const sales_col  = document.getElementById('selSales').value;
+  const brand_col  = document.getElementById('selBrand').value;
+  const product_col= document.getElementById('selProduct').value;
+
+  if (!date_col || !vendor_col || !sales_col) {
+    toast('Select Date, Vendor and Sales columns first', 'err'); return;
+  }
+
+  document.getElementById('overlay').classList.add('on');
+  document.getElementById('runBtn').disabled = true;
+  document.getElementById('ovSub').textContent = 'Running 8 models — please wait…';
+
+  const fd = new FormData();
+  fd.append('file', selectedFile);
+  fd.append('date_col',   date_col);
+  fd.append('vendor_col', vendor_col);
+  fd.append('sales_col',  sales_col);
+  if (brand_col)    fd.append('brand_col',   brand_col);
+  if (product_col)  fd.append('product_col', product_col);
+
+  try {
+    const res  = await fetch(`${API}/predict`, { method: 'POST', body: fd });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    renderResults(data);
+    toast('Done! Best model: ' + data.best_model, 'ok');
+  } catch(e) {
+    toast('Error: ' + e.message, 'err');
+  } finally {
+    document.getElementById('overlay').classList.remove('on');
+    document.getElementById('runBtn').disabled = false;
+  }
+}
+
+function renderResults(data) {
+  lastPredictions = data.predictions;
+  // Best banner
+  document.getElementById('bestName').textContent = data.best_model;
+  const bm = data.model_results.find(m => m.model === data.best_model);
+  document.getElementById('bestAcc').textContent = (bm?.accuracy ?? 0).toFixed(1) + '% accuracy';
+
+  // Model grid
+  const maxAcc = Math.max(...data.model_results.map(m => m.accuracy), 1);
+  document.getElementById('modelGrid').innerHTML = data.model_results.map(m => `
+    <div class="model-card ${m.model === data.best_model ? 'top' : ''}">
+      <div class="mc-name">${esc(m.model)}</div>
+      <div class="mc-bar-track"><div class="mc-bar" style="width:${Math.max(0,m.accuracy/maxAcc*100).toFixed(1)}%"></div></div>
+      <div class="mc-val">${m.accuracy.toFixed(1)}%</div>
+    </div>`).join('');
+
+  // Predictions table
+  if (!data.predictions.length) {
+    document.getElementById('results').style.display = 'block'; return;
+  }
+  lastCols = Object.keys(data.predictions[0]);
+  document.getElementById('predHead').innerHTML = '<tr>' + lastCols.map(c=>`<th>${esc(c)}</th>`).join('') + '</tr>';
+  document.getElementById('predBody').innerHTML = data.predictions.map(row =>
+    '<tr>' + lastCols.map(c => `<td class="${c==='predicted_sales'?'td-sales':''}">${fmtVal(row[c])}</td>`).join('') + '</tr>'
+  ).join('');
+
+  document.getElementById('results').style.display = 'block';
+  setTimeout(() => document.getElementById('results').scrollIntoView({ behavior:'smooth', block:'start' }), 100);
+}
+
+function downloadCSV() {
+  if (!lastPredictions?.length) return;
+  const rows = [lastCols.join(','), ...lastPredictions.map(r => lastCols.map(c=>`"${r[c]??''}"`).join(','))];
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([rows.join('\n')], {type:'text/csv'}));
+  a.download = 'vendorcast_predictions.csv';
+  a.click();
+}
+
+/* ── HISTORY ── */
+async function loadHistory() {
+  document.getElementById('histBody').innerHTML = '<tr><td class="empty" colspan="99">Loading from sales.db…</td></tr>';
+  try {
+    const res  = await fetch(`${API}/history`);
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    const rows = data.data;
+    if (!rows.length) {
+      document.getElementById('histBody').innerHTML = '<tr><td class="empty" colspan="99">No data yet — run a prediction first.</td></tr>';
+      return;
+    }
+    const cols = Object.keys(rows[0]);
+    document.getElementById('histHead').innerHTML = '<tr>' + cols.map(c=>`<th>${esc(c)}</th>`).join('') + '</tr>';
+    document.getElementById('histBody').innerHTML = rows.map(r =>
+      '<tr>' + cols.map(c=>`<td>${fmtVal(r[c])}</td>`).join('') + '</tr>'
+    ).join('');
+    const vendors = new Set(rows.map(r => r.vendor_id ?? r[cols[0]])).size;
+    const months  = new Set(rows.map(r => r.month)).size;
+    document.getElementById('hRows').textContent    = fmtNum(data.total);
+    document.getElementById('hVendors').textContent = vendors;
+    document.getElementById('hMonths').textContent  = months || '—';
+  } catch(e) {
+    document.getElementById('histBody').innerHTML = `<tr><td class="empty" colspan="99">Error: ${esc(e.message)}</td></tr>`;
+  }
+}
+
+/* ── HELPERS ── */
+function fmtBytes(b){const k=1024,s=['B','KB','MB','GB','TB'];const i=Math.floor(Math.log(b)/Math.log(k));return(b/Math.pow(k,i)).toFixed(1)+' '+s[i]}
+function fmtNum(n){return n>=1e6?(n/1e6).toFixed(1)+'M':n>=1e3?(n/1e3).toFixed(1)+'K':String(n)}
+function fmtVal(v){if(v===null||v===undefined)return'—';if(typeof v==='number')return Number.isInteger(v)?v.toLocaleString():v.toFixed(2);return v}
+function esc(s){const d=document.createElement('div');d.textContent=String(s??'');return d.innerHTML}
+
+let tt;
+function toast(msg,type='ok'){
+  const el=document.getElementById('toast');
+  el.textContent=(type==='ok'?'✓  ':' ✕  ')+msg;
+  el.className=`toast ${type} show`;
+  clearTimeout(tt);tt=setTimeout(()=>el.classList.remove('show'),4500);
+}
+</script>
+</body>
+</html>
